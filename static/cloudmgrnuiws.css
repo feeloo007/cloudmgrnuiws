@@ -1,0 +1,232 @@
+* {
+	font-family		: "Lucida Sans Typewriter", "Lucida Console", Monaco, "Bitstream Vera Sans Mono", monospace ;
+ 	margin: 0;
+    	padding: 0;
+    	border: 0;
+    	font-size: 1em;
+    	font-weight: normal;
+    	font-style: normal;
+    	text-decoration: none; 
+}
+
+div.wsnui_navigator.table {
+	display			: table ;
+	border-spacing		: 0em ;
+}
+
+div.wsnui_navigator.row {
+        display                 : table-row ;
+}
+
+.wsnui_navigator.title {
+	padding-top		: 0.5em ;
+	padding-bottom		: 0.5em ;
+}
+
+.wsnui_navigator.table>.wsnui_navigator.row>div>.wsnui_navigator.cell {
+        display                 : table-cell ;
+	background-color	: #E0E0F0 ;
+}
+
+.wsnui_navigator.table>.wsnui_navigator.row>div>.wsnui_navigator.cell:first-child {
+	border-right		: 1px black dotted ;
+}
+
+.wsnui_navigator.datas a:link {
+        color                   : #303030 ;
+        text-decoration         : none ;
+}
+
+.wsnui_navigator.actions a:link {
+        color                   : #303030 ;
+        text-decoration         : none ;
+}
+
+.wsnui_navigator.data {
+        padding-left		: 1em ;
+        padding-right		: 1em ; 
+	padding-top		: 0.25em ;
+	padding-bottom		: 0.25em ;
+}
+
+.wsnui_navigator.data.light {
+	background-color	: #E0E0F0 ;
+}
+
+.wsnui_navigator.data.dark {
+	background-color	: #D0D0F0 ;
+}
+
+.wsnui_navigator.data.selected {
+        background-color        : #8080B0 ;
+        color                   : #F0F0F0 ;
+        border-radius           : 4px ;
+}
+
+.wsnui_navigator.data.selected a:link {
+        color                   : #F0F0F0 ;
+}
+
+.wsnui_navigator.data.title {
+        background-color        : #404060 ;
+        color                   : #E0E0E0 ;
+}
+
+.wsnui_navigator.action {
+        padding-left            : 1em ;
+        padding-right           : 1em ;
+        padding-top             : 0.25em ;
+        padding-bottom          : 0.25em ;
+}
+
+.wsnui_navigator.action.light {
+        background-color        : #F0E0E0 ;
+}
+
+.wsnui_navigator.action.dark {
+        background-color        : #F0D0D0 ;
+}
+
+.wsnui_navigator.action.selected {
+        background-color        : #B08080 ;
+        color                   : #F0F0F0 ;
+        border-radius           : 4px ;
+}
+
+.wsnui_navigator.action.selected a:link {
+        color                   : #F0F0F0 ;
+}
+
+.wsnui_navigator.action.title {
+        background-color        : #604040 ;
+        color                   : #E0E0E0 ;
+}
+
+
+.wsnui_navigator.datas {
+	height			: 16.25em ;
+        overflow		: auto ;
+}
+
+.wsnui_navigator.datas.x2 {
+	height			: 34em ;
+}
+
+.wsnui_navigator.actions {
+	height			: 16.25em ;
+        overflow		: auto ;
+	background-color	: #F0E0E0 ;
+}
+
+.wsnui_navigator.actions.x2 {
+	height			: 34em ;
+}
+
+.wsnui_entity.table {
+	display			: table ;
+	border-spacing		: 0em ;
+        width			: 100% ;
+}
+
+.wsnui_entity.row {
+	display			: table-row ;
+}
+
+.wsnui_entity.cell {
+        display                 : table-cell ;
+        padding-right		: 0.25em ;
+        padding-left		: 0.25em ;
+}
+
+.wsnui_entity.cell.entity_name {
+	width			: 100% ;
+}
+
+.wsnui_entity.cell.status {
+}
+
+.wsnui_entity.cell.status .checker {
+        width			: 100% ;
+	padding-right		: 0.25em ;
+	padding-left		: 0.25em ;
+        border-radius           : 4px ;
+}
+
+.wsnui_entity.cell.status .checker.checking {
+        background-color        : #707070 ;
+        color                   : #D0D0D0 ;
+}
+
+.wsnui_entity.status_spacer {
+	width			: 7.25em ;
+	text-align		: center ;
+}
+
+.wsnui_action.table {
+        display                 : table ;
+        border-spacing          : 0em ;
+        width                   : 100% ;
+}
+
+.wsnui_action.row {
+        display                 : table-row ;
+}
+
+.wsnui_action.cell {
+        display                 : table-cell ;
+}
+
+.wsnui_action.cell.actionname_aera {
+	width			: 100% ;
+        padding-right		: 0.25em ;
+}
+
+.wsnui_action.cell.run_aera {
+}
+
+.wsnui_action.run_aera_spacer {
+	width			: 7em ;
+	text-align		: center ;
+        display			: block ;
+        padding-left		: 0.25em ;
+        padding-right		: 0.25em ;
+}
+
+.wsnui_action.run_aera_spacer.ready_to_run {
+        border-radius           : 4px ;
+        background-color        : black ;
+}
+
+.wsnui_action.run_aera_spacer.running {
+        border-radius           : 4px ;
+        background-color        : #707070 ;
+        color			: #D0D0D0 ;
+}
+
+.wsnui_status.close {
+        display			: block ;
+        border-radius           : 4px ;
+        background-color        : black ;
+	width			: 25% ;
+        text-align		: center ;
+}
+
+.wsnui_status:link {
+        color                   : #F0F0F0 ;
+        text-decoration         : none ;
+}
+
+.wsnui_status.colored_light {
+        display                 : block ;
+        border-radius           : 4px ;
+        text-align              : center ;
+        color                   : #F0F0F0 ;
+}
+
+.wsnui_status.colored_light.ok {
+        background-color	: #00E000 ;
+}
+
+.wsnui_status.colored_light.ko {
+        background-color	: #E00000 ;
+}
