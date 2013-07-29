@@ -15,7 +15,9 @@ setup(
       include_package_data = True,
       package_data = {'' : ['*.cfg']},
       zip_safe = False,
-      install_requires = ('nagare',),
+      install_requires = (
+	'nagare==0.4.1',
+      ),
       message_extractors = { 'cloudmgrnuiws' : [('**.py', 'python', None)] },
       entry_points = """
       [nagare.applications]
