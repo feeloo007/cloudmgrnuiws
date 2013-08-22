@@ -34,3 +34,6 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
+
+# Suppression du fichier de configuraiton pour remplacement dans git par une version template
+conf/cloudmgrnuiws.cfg
