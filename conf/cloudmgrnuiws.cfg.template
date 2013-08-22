@@ -10,4 +10,4 @@ metadata = cloudmgrnuiws.models:__metadata__
 debug = off
 
 [specific]
-exemple = exemple
+path = /etc/mdp/apps.d/cloudmgrnuiws/

@@ -5,6 +5,7 @@ import		functools
 from 		nagare 			import 	presentation, component, ajax, wsgi
 from   		nagare.namespaces 	import 	xhtml
 from 		collections		import 	namedtuple
+import 		os
 
 NBSP = u'\N{NO-BREAK SPACE}'
 
@@ -569,7 +570,11 @@ class WSGIApp( wsgi.WSGIApp ):
 
         super(  WSGIApp, self ).set_config( config_filename, config, error )
 
-        print config[ 'specific' ]
+        try:
+            # Test de la presence du repertoire de configurations specifiques
+            os.path.isdir( config[ 'specific' ][ 'path' ] )
+        except:
+            print 'no [specific]/path in %s' % ( config_filename )
 
 def create_root_component( *args, **kwargs ):
     return component.Component( Cloudmgrnuiws() )
