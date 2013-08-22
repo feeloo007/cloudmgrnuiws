@@ -6,7 +6,10 @@ from 		nagare 			import 	presentation, component, ajax, wsgi
 from   		nagare.namespaces 	import 	xhtml
 from 		collections		import 	namedtuple
 import 		os
-
+import          threading
+from            plone.synchronize       import  synchronized
+import 		pyinotify
+from 		contextlib   		import 	closing
 
 NBSP = u'\N{NO-BREAK SPACE}'
 
@@ -22,26 +25,20 @@ RootWS = namedtuple( 'RootWS', [ 'id_', 'URL' ] )
 
 class Cloudmgrnuiws(object):
 
-    _dict_rootWS       = {
-                           #'/CLOUDMRGWS'       : 'http://10.161.113.60:8080/cloudmgrws',
-                           #'/CLOUDMRGWS2'     : 'http://10.161.113.60:8080/cloudmgrws',
-                          }
-
+    def __init__( self, specific_path ):
+        self._specific_path    = specific_path
+        self.reinit_levels()
 
     def get_list_rootWS( self ):
         return sorted( 
             [ 
              RootWS( id_, URL ) 
              for id_, URL 
-             in self._dict_rootWS.iteritems()
+             in TheRootWS( self._specific_path ).dict_rootWS.iteritems()
             ], 
             key = lambda WS: WS.id_
         ) or [ RootWS( 'NO WEBSERVICE', '' ) ]
     list_rootWS 	= property( get_list_rootWS, None, None, None )
-
-    def __init__( self ):
-        self.reinit_levels()
-
 
     def reinit_levels( self, rootWS = None ):
         if rootWS:
@@ -589,6 +586,77 @@ setTimeout("reload_status()",5000) ;
     return h.root
 
 # ---------------------------------------------------------------
+def Singleton( theClass ):
+    """ decorator for a class to make a singleton out of it """
+
+    classInstances = {}
+
+    def getInstance( *args, **kwargs ):
+        """ creating or just return the one and only class instance.
+            The singleton depends on the parameters used in __init__ """
+
+        key = ( theClass, args, str(kwargs) )
+
+        if key not in classInstances:
+
+            classInstances[ key ] = theClass( *args, **kwargs )
+
+        return classInstances[ key ]
+
+    return getInstance
+
+_d_event_lock               	= threading.RLock()
+
+class IRootWS:
+
+    __ROOT_WS__FILENAME__	= 'root_ws.json'
+
+@Singleton
+class TheRootWS( IRootWS ):
+
+    def __init__( self, pathdir ):
+
+        self._pathdir		= pathdir
+        self._dict_rootWS	= {}
+
+    def get_root_ws_filepath( self ):
+        return 								\
+            self._pathdir.rstrip( os.sep )			+	\
+            os.sep						+	\
+            IRootWS.__ROOT_WS__FILENAME__
+
+    root_ws_filepath		= 					\
+        property(
+            get_root_ws_filepath,
+            None,
+            None
+    )
+
+    @synchronized( _d_event_lock )
+    def load_root_ws( self ):
+
+        try:
+            with closing(
+                open(
+                   self.root_ws_filepath
+                )
+            ) as f:
+             self._dict_rootWS	=	json.load( f )
+        except:
+             print '%s not json loadable' % ( self.root_ws_filepath )
+             self._dict_rootWS	=	{}
+
+    @synchronized( _d_event_lock )
+    def get_dict_rootWS( self ):
+        return self._dict_rootWS
+    dict_rootWS                 = property( get_dict_rootWS, None, None )
+
+    dict_rootWS			= 					\
+        property(
+            get_dict_rootWS,
+            None,
+            None
+    )
 
 class WSGIApp( wsgi.WSGIApp ):
 
@@ -604,11 +672,86 @@ class WSGIApp( wsgi.WSGIApp ):
 
         try:
             # Test de la presence du repertoire de configurations specifiques
-            os.path.isdir( config[ 'specific' ][ 'path' ] )
+            if not os.path.isdir( config[ 'specific' ][ 'path' ] ):
+                print '[specific]/path is not a directory in %s' % ( config_filename )
+                return
+
+            self._specific_path			=			\
+                config[ 'specific' ][ 'path' ]
+
+            wm 					= pyinotify.WatchManager()
+            mask 				= 			\
+                pyinotify.IN_MODIFY 		|			\
+                pyinotify.IN_CREATE 		| 			\
+                pyinotify.IN_DELETE 		|			\
+                pyinotify.IN_ATTRIB 		| 			\
+                pyinotify.IN_MOVED_TO		|			\
+                pyinotify.IN_MOVED_FROM
+
+            class EventHandler( pyinotify.ProcessEvent ):
+
+                def process_root_ws():
+
+                    TheRootWS( self._specific_path ).load_root_ws()
+
+                __D_EVT__ 			=			\
+                        {
+                           IRootWS.__ROOT_WS__FILENAME__		\
+                                : process_root_ws,
+                        }
+
+                def process_evt( o, event ):
+
+                    def nothing_to_do():
+                        pass
+
+                    with _d_event_lock:
+                        return						\
+                            EventHandler.__D_EVT__.get(
+                                event.name,
+                                lambda: 	nothing_to_do
+                            )()
+
+                process_IN_MODIFY 	= process_evt
+                process_IN_CREATE	= process_evt
+                process_IN_DELETE	= process_evt
+                process_IN_ATTRIB	= process_evt
+                process_IN_MOVED_TO	= process_evt
+                process_IN_MOVED_FROM	= process_evt
+
+            self._notifier 		= 				\
+                pyinotify.ThreadedNotifier( wm, EventHandler() )
+
+            self._notifier.coalesce_events()
+
+            wm.add_watch(
+                self._specific_path,
+                mask,
+                rec			= True,
+                auto_add		= True
+            )
+
+            self._notifier.start()
+
+            TheRootWS( self._specific_path ).load_root_ws()
+
         except:
             print 'no [specific]/path in %s' % ( config_filename )
+            return
+
+    def create_root( self, *args, **kwargs ):
+
+        """Create the application root component
+
+        Return:
+          - the root component
+        """
+        kwargs[ 'specific_path' ]      	= 				\
+            self._specific_path
+        return super( WSGIApp, self ).create_root( *args, **kwargs )
+
 
 def create_root_component( *args, **kwargs ):
-    return component.Component( Cloudmgrnuiws() )
+    return component.Component( Cloudmgrnuiws( *args, **kwargs ) )
 
 app = WSGIApp( create_root_component )
