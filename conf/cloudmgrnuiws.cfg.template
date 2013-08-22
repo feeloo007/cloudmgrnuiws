@@ -8,3 +8,6 @@ activated = off
 uri = sqlite:///$here/../data/cloudmgrnuiws.db
 metadata = cloudmgrnuiws.models:__metadata__
 debug = off
+
+[specific]
+exemple = exemple

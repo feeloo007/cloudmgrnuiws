@@ -2,7 +2,7 @@
 import 		urllib2
 import 		json
 import		functools
-from 		nagare 			import 	presentation, component, ajax
+from 		nagare 			import 	presentation, component, ajax, wsgi
 from   		nagare.namespaces 	import 	xhtml
 from 		collections		import 	namedtuple
 
@@ -557,4 +557,21 @@ setTimeout("reload_status()",5000) ;
 
 # ---------------------------------------------------------------
 
-app = Cloudmgrnuiws
+class WSGIApp( wsgi.WSGIApp ):
+
+    def set_config( self, config_filename, config, error ):
+        """Read the configuration parameters
+        In:
+            - ``config_filename`` -- the path to the configuration file
+            - ``config`` -- the ``ConfigObj`` object, created from the configuration file
+            - ``error`` -- the function to call in case of configuration errors
+        """
+
+        super(  WSGIApp, self ).set_config( config_filename, config, error )
+
+        print config[ 'specific' ]
+
+def create_root_component( *args, **kwargs ):
+    return component.Component( Cloudmgrnuiws() )
+
+app = WSGIApp( create_root_component )
