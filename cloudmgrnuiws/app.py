@@ -7,6 +7,7 @@ from   		nagare.namespaces 	import 	xhtml
 from 		collections		import 	namedtuple
 import 		os
 
+
 NBSP = u'\N{NO-BREAK SPACE}'
 
 d_labels 	= {
@@ -21,31 +22,36 @@ RootWS = namedtuple( 'RootWS', [ 'id_', 'URL' ] )
 
 class Cloudmgrnuiws(object):
 
-    _dict_rootWS	= {
-                           '/CLOUDMRGWS'	: 'http://10.161.113.60:8080/cloudmgrws',
-                           #'/CLOUDMRGWS2'	: 'http://10.161.113.60:8080/cloudmgrws',
+    _dict_rootWS       = {
+                           #'/CLOUDMRGWS'       : 'http://10.161.113.60:8080/cloudmgrws',
+                           #'/CLOUDMRGWS2'     : 'http://10.161.113.60:8080/cloudmgrws',
                           }
+
 
     def get_list_rootWS( self ):
         return sorted( 
             [ 
              RootWS( id_, URL ) 
              for id_, URL 
-             in self._dict_rootWS.iteritems() 
+             in self._dict_rootWS.iteritems()
             ], 
             key = lambda WS: WS.id_
-        )
+        ) or [ RootWS( 'NO WEBSERVICE', '' ) ]
     list_rootWS 	= property( get_list_rootWS, None, None, None )
 
     def __init__( self ):
         self.reinit_levels()
+
 
     def reinit_levels( self, rootWS = None ):
         if rootWS:
             self._selected_levels	= self._processed_levels 	= [ rootWS ]
         else:
             self._processed_levels 	= [ self.list_rootWS[ 0 ] ]
-            self._selected_levels 	= [ self.list_rootWS[ 0 ], 'X04', 'VILLE', 'R7', 'TOMCAT', '0002' ]
+            #Fonctionnalite qui pourrait etre rempalcer par un rechargement des
+            #d'un etat de deriere utilisation
+            #self._selected_levels 	= [ self.list_rootWS[ 0 ], 'X04', 'VILLE', 'R7', 'TOMCAT', '0002' ]
+            self._selected_levels 	= [ self.list_rootWS[ 0 ] ]
 
     def get_processed_WSURL( self ):
         if len( self._selected_levels ) == 1:
@@ -154,8 +160,21 @@ def render(self, h, *args):
     return h.root
 
 def process_WSURL( WSURL ):
-   f       = urllib2.urlopen( WSURL )
-   return json.load( f )
+   if WSURL:
+       f       	= urllib2.urlopen( WSURL )
+       return json.load( f )
+   else:
+       return 	{
+           'is_ok'			: False,
+           'accepted_commands'		: [],
+           'information_message'	: '',
+           'next'			: {},
+           'execution'			: {
+               'steps'			: [],
+               'has_been_executed'	: False,
+           },
+           'datas'			: []
+       }
 
 @presentation.render_for( Cloudmgrnuiws, model = 'ELEMENT_COLUMN' )
 @force_wrapper_to_generate( True )
