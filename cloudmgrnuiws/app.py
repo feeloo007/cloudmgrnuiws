@@ -21,7 +21,7 @@ d_labels 	= {
 	           'num_components'	: '''Instance''',
            	  }
 
-RootWS = namedtuple( 'RootWS', [ 'id_', 'URL' ] )
+RootWS = namedtuple( 'RootWS', [ 'id_', 'URL', 'index' ] )
 
 class Cloudmgrnuiws(object):
 
@@ -32,12 +32,16 @@ class Cloudmgrnuiws(object):
     def get_list_rootWS( self ):
         return sorted( 
             [ 
-             RootWS( id_, URL ) 
-             for id_, URL 
-             in TheRootWS( self._specific_path ).dict_rootWS.iteritems()
+             RootWS( id_, URL, index ) 
+             for index, ( id_, URL )
+             in enumerate( 
+                 TheRootWS( 
+                     self._specific_path 
+                 ).dict_rootWS.iteritems() 
+             )
             ], 
             key = lambda WS: WS.id_
-        ) or [ RootWS( 'NO WEBSERVICE', '' ) ]
+        ) or [ RootWS( 'NO WEBSERVICE', '', 0 ) ]
     list_rootWS 	= property( get_list_rootWS, None, None, None )
 
     def reinit_levels( self, rootWS = None ):
