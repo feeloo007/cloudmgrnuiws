@@ -17,6 +17,8 @@ setup(
       zip_safe = False,
       install_requires = (
 	'nagare==0.4.1',
+	'plone.synchronize==1.0.1',
+	'pyinotify==0.9.4',
       ),
       message_extractors = { 'cloudmgrnuiws' : [('**.py', 'python', None)] },
       entry_points = """

@@ -2,9 +2,14 @@
 import 		urllib2
 import 		json
 import		functools
-from 		nagare 			import 	presentation, component, ajax
+from 		nagare 			import 	presentation, component, ajax, wsgi
 from   		nagare.namespaces 	import 	xhtml
 from 		collections		import 	namedtuple
+import 		os
+import          threading
+from            plone.synchronize       import  synchronized
+import 		pyinotify
+from 		contextlib   		import 	closing
 
 NBSP = u'\N{NO-BREAK SPACE}'
 
@@ -16,35 +21,38 @@ d_labels 	= {
 	           'num_components'	: '''Instance''',
            	  }
 
-RootWS = namedtuple( 'RootWS', [ 'id_', 'URL' ] )
+RootWS = namedtuple( 'RootWS', [ 'id_', 'URL', 'index' ] )
 
 class Cloudmgrnuiws(object):
 
-    _dict_rootWS	= {
-                           '/CLOUDMRGWS'	: 'http://10.161.113.60:8080/cloudmgrws',
-                           #'/CLOUDMRGWS2'	: 'http://10.161.113.60:8080/cloudmgrws',
-                          }
+    def __init__( self, specific_path ):
+        self._specific_path    = specific_path
+        self.reinit_levels()
 
     def get_list_rootWS( self ):
         return sorted( 
             [ 
-             RootWS( id_, URL ) 
-             for id_, URL 
-             in self._dict_rootWS.iteritems() 
+             RootWS( id_, URL, index ) 
+             for index, ( id_, URL )
+             in enumerate( 
+                 TheRootWS( 
+                     self._specific_path 
+                 ).dict_rootWS.iteritems() 
+             )
             ], 
             key = lambda WS: WS.id_
-        )
+        ) or [ RootWS( 'NO WEBSERVICE', '', 0 ) ]
     list_rootWS 	= property( get_list_rootWS, None, None, None )
-
-    def __init__( self ):
-        self.reinit_levels()
 
     def reinit_levels( self, rootWS = None ):
         if rootWS:
             self._selected_levels	= self._processed_levels 	= [ rootWS ]
         else:
             self._processed_levels 	= [ self.list_rootWS[ 0 ] ]
-            self._selected_levels 	= [ self.list_rootWS[ 0 ], 'X04', 'VILLE', 'R7', 'TOMCAT', '0002' ]
+            #Fonctionnalite qui pourrait etre rempalcer par un rechargement des
+            #d'un etat de deriere utilisation
+            #self._selected_levels 	= [ self.list_rootWS[ 0 ], 'X04', 'VILLE', 'R7', 'TOMCAT', '0002' ]
+            self._selected_levels 	= [ self.list_rootWS[ 0 ] ]
 
     def get_processed_WSURL( self ):
         if len( self._selected_levels ) == 1:
@@ -140,10 +148,11 @@ def render(self, h, *args):
 
                  h << h.a(
                      h.div(
-                         ws.id_,
+                         component.Component( WS( ws ) ).render( xhtml.AsyncRenderer( h ) ),
                          class_ = 'wsnui_navigator data %s' % background_color.next() + ( ' selected' if ws.id_ == self._selected_levels[ 0 ].id_ else '' )
                      )
                  ).action( reinit_levels )
+
 
     with h.div( class_ = 'wsnui_navigator cell ;' ):
         with h.div( class_ = 'wsnui_navigator table ;' ):
@@ -153,8 +162,144 @@ def render(self, h, *args):
     return h.root
 
 def process_WSURL( WSURL ):
-   f       = urllib2.urlopen( WSURL )
-   return json.load( f )
+   if WSURL:
+       try:
+           f       	= urllib2.urlopen( WSURL )
+           return json.load( f )
+       except:
+           return 	{
+               'is_ok'			: False,
+               'accepted_commands'	: [],
+               'information_message'	: '',
+               'next'			: {},
+               'execution'		: {
+                   'steps'		: [],
+                   'has_been_executed'	: False,
+               },
+               'datas'			: []
+           }
+   else:
+       return 	{
+           'is_ok'			: False,
+           'accepted_commands'		: [],
+           'information_message'	: '',
+           'next'			: {},
+           'execution'			: {
+               'steps'			: [],
+               'has_been_executed'	: False,
+           },
+           'datas'			: []
+       }
+
+class WS( object ):
+
+    def __init__( self, ws ):
+        self._ws	= ws
+
+@presentation.render_for( WS )
+@force_wrapper_to_generate( True )
+def render(self, h, *args):
+
+    with h.div( class_ = 'wsnui_ws table' ):
+        with h.div( class_ = 'wsnui_ws row' ):
+            with h.div( class_ = 'wsnui_ws cell status' ):
+                h << component.Component(
+                    WSAvailabilityChecker( self._ws )
+                    ).render(
+                        xhtml.AsyncRenderer( h )
+                    )
+            with h.div( class_ = 'wsnui_ws cell ws_name' ):
+                h << self._ws.id_
+
+    return h.root
+
+class WSAvailabilityChecker( object ):
+     def __init__( self, ws ):
+         self._ws 			= ws
+         self._result_WSURL		= {}
+
+@presentation.render_for( WSAvailabilityChecker )
+@force_wrapper_to_generate( True )
+def render(self, h, comp, *args):
+
+    def check_ws_availability( comp = comp ):
+        self._result_WSURL      = process_WSURL( self._ws.URL )
+        comp.becomes( comp, model = 'CHECKED' )
+
+    u = ajax.Update(
+        lambda r, comp = comp: comp.render( r ),
+        check_ws_availability
+    )
+
+    h << component.Component(
+        ResultWSAvailability( None )
+    ).render(
+            xhtml.AsyncRenderer( h )
+    )
+
+    h << h.script(
+        u.generate_action( 2, h )
+    )
+
+    return h.root
+
+
+@presentation.render_for( WSAvailabilityChecker, model = 'CHECKED' )
+@force_wrapper_to_generate( True )
+def render(self, h, comp, *args):
+
+    def check_ws_availability( comp = comp ):
+        self._result_WSURL = process_WSURL( self._ws.URL )
+        comp.becomes( comp )
+
+    u = ajax.Update(
+        lambda r, comp = comp: comp.render( r ),
+        check_ws_availability
+    )
+
+    h << component.Component(
+        ResultWSAvailability( self._result_WSURL )
+    ).render(
+        xhtml.AsyncRenderer( h )
+    )
+
+    h << h.script(
+'''
+function reload_check_ws_availability_for_%s() {''' % ( self._ws.index ) +
+'''
+{ACTION} ;'''.format( ACTION = u.generate_action( 2, h ) ) +
+'''
+}
+setTimeout("reload_check_ws_availability_for_%s()",5000) ;
+''' % ( self._ws.index )
+    )
+
+    return h.root
+
+class ResultWSAvailability( object ):
+    def __init__( self, result_WSURL ):
+        self._result_WSURL 	= result_WSURL
+
+@presentation.render_for( ResultWSAvailability )
+@force_wrapper_to_generate( False )
+def render(self, h, comp, *args):
+
+    h << h.img(
+        src = 					\
+            'img/ws_loading.png' 		\
+            if not self._result_WSURL 		\
+            else				\
+            'img/ws_connected.png' 		\
+            if self._result_WSURL[ 'is_ok' ] 	\
+            else 'img/ws_disconnected.png',	\
+        class_ = 				\
+            'ws_checker checking' 		\
+            if not self._result_WSURL 		\
+            else				\
+            'ws_checker checked', 		\
+     )
+
+    return h.root
 
 @presentation.render_for( Cloudmgrnuiws, model = 'ELEMENT_COLUMN' )
 @force_wrapper_to_generate( True )
@@ -529,7 +674,7 @@ def render(self, h, comp, *args):
 
     def reload_status( comp = comp ):
         self._result_WSURL = process_WSURL( self._status_WSURL )
-        comp.becomes( comp, model = 'CHECKED' )
+        comp.becomes( comp )
 
     u = ajax.Update(
         lambda r, comp = comp: comp.render( r ),
@@ -556,5 +701,172 @@ setTimeout("reload_status()",5000) ;
     return h.root
 
 # ---------------------------------------------------------------
+def Singleton( theClass ):
+    """ decorator for a class to make a singleton out of it """
 
-app = Cloudmgrnuiws
+    classInstances = {}
+
+    def getInstance( *args, **kwargs ):
+        """ creating or just return the one and only class instance.
+            The singleton depends on the parameters used in __init__ """
+
+        key = ( theClass, args, str(kwargs) )
+
+        if key not in classInstances:
+
+            classInstances[ key ] = theClass( *args, **kwargs )
+
+        return classInstances[ key ]
+
+    return getInstance
+
+_d_event_lock               	= threading.RLock()
+
+class IRootWS:
+
+    __ROOT_WS__FILENAME__	= 'root_ws.json'
+
+@Singleton
+class TheRootWS( IRootWS ):
+
+    def __init__( self, pathdir ):
+
+        self._pathdir		= pathdir
+        self._dict_rootWS	= {}
+
+    def get_root_ws_filepath( self ):
+        return 								\
+            self._pathdir.rstrip( os.sep )			+	\
+            os.sep						+	\
+            IRootWS.__ROOT_WS__FILENAME__
+
+    root_ws_filepath		= 					\
+        property(
+            get_root_ws_filepath,
+            None,
+            None
+    )
+
+    @synchronized( _d_event_lock )
+    def load_root_ws( self ):
+
+        try:
+            with closing(
+                open(
+                   self.root_ws_filepath
+                )
+            ) as f:
+             self._dict_rootWS	=	json.load( f )
+        except:
+             print '%s not json loadable' % ( self.root_ws_filepath )
+             self._dict_rootWS	=	{}
+
+    @synchronized( _d_event_lock )
+    def get_dict_rootWS( self ):
+        return self._dict_rootWS
+    dict_rootWS                 = property( get_dict_rootWS, None, None )
+
+    dict_rootWS			= 					\
+        property(
+            get_dict_rootWS,
+            None,
+            None
+    )
+
+class WSGIApp( wsgi.WSGIApp ):
+
+    def set_config( self, config_filename, config, error ):
+        """Read the configuration parameters
+        In:
+            - ``config_filename`` -- the path to the configuration file
+            - ``config`` -- the ``ConfigObj`` object, created from the configuration file
+            - ``error`` -- the function to call in case of configuration errors
+        """
+
+        super(  WSGIApp, self ).set_config( config_filename, config, error )
+
+        try:
+            # Test de la presence du repertoire de configurations specifiques
+            if not os.path.isdir( config[ 'specific' ][ 'path' ] ):
+                print '[specific]/path is not a directory in %s' % ( config_filename )
+                return
+
+            self._specific_path			=			\
+                config[ 'specific' ][ 'path' ]
+
+            wm 					= pyinotify.WatchManager()
+            mask 				= 			\
+                pyinotify.IN_MODIFY 		|			\
+                pyinotify.IN_CREATE 		| 			\
+                pyinotify.IN_DELETE 		|			\
+                pyinotify.IN_ATTRIB 		| 			\
+                pyinotify.IN_MOVED_TO		|			\
+                pyinotify.IN_MOVED_FROM
+
+            class EventHandler( pyinotify.ProcessEvent ):
+
+                def process_root_ws():
+
+                    TheRootWS( self._specific_path ).load_root_ws()
+
+                __D_EVT__ 			=			\
+                        {
+                           IRootWS.__ROOT_WS__FILENAME__		\
+                                : process_root_ws,
+                        }
+
+                def process_evt( o, event ):
+
+                    def nothing_to_do():
+                        pass
+
+                    with _d_event_lock:
+                        return						\
+                            EventHandler.__D_EVT__.get(
+                                event.name,
+                                lambda: 	nothing_to_do
+                            )()
+
+                process_IN_MODIFY 	= process_evt
+                process_IN_CREATE	= process_evt
+                process_IN_DELETE	= process_evt
+                process_IN_ATTRIB	= process_evt
+                process_IN_MOVED_TO	= process_evt
+                process_IN_MOVED_FROM	= process_evt
+
+            self._notifier 		= 				\
+                pyinotify.ThreadedNotifier( wm, EventHandler() )
+
+            self._notifier.coalesce_events()
+
+            wm.add_watch(
+                self._specific_path,
+                mask,
+                rec			= True,
+                auto_add		= True
+            )
+
+            self._notifier.start()
+
+            TheRootWS( self._specific_path ).load_root_ws()
+
+        except:
+            print 'no [specific]/path in %s' % ( config_filename )
+            return
+
+    def create_root( self, *args, **kwargs ):
+
+        """Create the application root component
+
+        Return:
+          - the root component
+        """
+        kwargs[ 'specific_path' ]      	= 				\
+            self._specific_path
+        return super( WSGIApp, self ).create_root( *args, **kwargs )
+
+
+def create_root_component( *args, **kwargs ):
+    return component.Component( Cloudmgrnuiws( *args, **kwargs ) )
+
+app = WSGIApp( create_root_component )
