@@ -161,8 +161,21 @@ def render(self, h, *args):
 
 def process_WSURL( WSURL ):
    if WSURL:
-       f       	= urllib2.urlopen( WSURL )
-       return json.load( f )
+       try:
+           f       	= urllib2.urlopen( WSURL )
+           return json.load( f )
+       except:
+           return 	{
+               'is_ok'			: False,
+               'accepted_commands'	: [],
+               'information_message'	: '',
+               'next'			: {},
+               'execution'		: {
+                   'steps'		: [],
+                   'has_been_executed'	: False,
+               },
+               'datas'			: []
+           }
    else:
        return 	{
            'is_ok'			: False,
