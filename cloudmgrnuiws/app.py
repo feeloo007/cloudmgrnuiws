@@ -400,7 +400,7 @@ def render(self, h, comp, *args):
 
             with h.div( id = format_params[ 'ID_WAIT' ], style = 'display: none ;' ):
                 with h.div( style = 'text-align : center ;' ):
-                    h << h.img( src='/static/cloudmgrnuiws/img/rel_interstitial_loading.gif' )
+                    h << h.img( src='img/rel_interstitial_loading.gif' )
 
             h << h.script( '''
 YAHOO.namespace("mdp.cloudmgr.nuiws.{ID_MODAL}") ;
