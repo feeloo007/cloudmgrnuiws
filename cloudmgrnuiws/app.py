@@ -148,10 +148,11 @@ def render(self, h, *args):
 
                  h << h.a(
                      h.div(
-                         ws.id_,
+                         component.Component( WS( ws ) ).render( xhtml.AsyncRenderer( h ) ),
                          class_ = 'wsnui_navigator data %s' % background_color.next() + ( ' selected' if ws.id_ == self._selected_levels[ 0 ].id_ else '' )
                      )
                  ).action( reinit_levels )
+
 
     with h.div( class_ = 'wsnui_navigator cell ;' ):
         with h.div( class_ = 'wsnui_navigator table ;' ):
@@ -189,6 +190,116 @@ def process_WSURL( WSURL ):
            },
            'datas'			: []
        }
+
+class WS( object ):
+
+    def __init__( self, ws ):
+        self._ws	= ws
+
+@presentation.render_for( WS )
+@force_wrapper_to_generate( True )
+def render(self, h, *args):
+
+    with h.div( class_ = 'wsnui_ws table' ):
+        with h.div( class_ = 'wsnui_ws row' ):
+            with h.div( class_ = 'wsnui_ws cell status' ):
+                h << component.Component(
+                    WSAvailabilityChecker( self._ws )
+                    ).render(
+                        xhtml.AsyncRenderer( h )
+                    )
+            with h.div( class_ = 'wsnui_ws cell ws_name' ):
+                h << self._ws.id_
+
+    return h.root
+
+class WSAvailabilityChecker( object ):
+     def __init__( self, ws ):
+         self._ws 			= ws
+         self._result_WSURL		= {}
+
+@presentation.render_for( WSAvailabilityChecker )
+@force_wrapper_to_generate( True )
+def render(self, h, comp, *args):
+
+    def check_ws_availability( comp = comp ):
+        self._result_WSURL      = process_WSURL( self._ws.URL )
+        comp.becomes( comp, model = 'CHECKED' )
+
+    u = ajax.Update(
+        lambda r, comp = comp: comp.render( r ),
+        check_ws_availability
+    )
+
+    h << component.Component(
+        ResultWSAvailability( None )
+    ).render(
+            xhtml.AsyncRenderer( h )
+    )
+
+    h << h.script(
+        u.generate_action( 2, h )
+    )
+
+    return h.root
+
+
+@presentation.render_for( WSAvailabilityChecker, model = 'CHECKED' )
+@force_wrapper_to_generate( True )
+def render(self, h, comp, *args):
+
+    def check_ws_availability( comp = comp ):
+        self._result_WSURL = process_WSURL( self._ws.URL )
+        comp.becomes( comp )
+
+    u = ajax.Update(
+        lambda r, comp = comp: comp.render( r ),
+        check_ws_availability
+    )
+
+    h << component.Component(
+        ResultWSAvailability( self._result_WSURL )
+    ).render(
+        xhtml.AsyncRenderer( h )
+    )
+
+    h << h.script(
+'''
+function reload_check_ws_availability_for_%s() {''' % ( self._ws.index ) +
+'''
+{ACTION} ;'''.format( ACTION = u.generate_action( 2, h ) ) +
+'''
+}
+setTimeout("reload_check_ws_availability_for_%s()",5000) ;
+''' % ( self._ws.index )
+    )
+
+    return h.root
+
+class ResultWSAvailability( object ):
+    def __init__( self, result_WSURL ):
+        self._result_WSURL 	= result_WSURL
+
+@presentation.render_for( ResultWSAvailability )
+@force_wrapper_to_generate( False )
+def render(self, h, comp, *args):
+
+    h << h.img(
+        src = 					\
+            'img/ws_loading.png' 		\
+            if not self._result_WSURL 		\
+            else				\
+            'img/ws_connected.png' 		\
+            if self._result_WSURL[ 'is_ok' ] 	\
+            else 'img/ws_disconnected.png',	\
+        class_ = 				\
+            'ws_checker checking' 		\
+            if not self._result_WSURL 		\
+            else				\
+            'ws_checker checked', 		\
+     )
+
+    return h.root
 
 @presentation.render_for( Cloudmgrnuiws, model = 'ELEMENT_COLUMN' )
 @force_wrapper_to_generate( True )

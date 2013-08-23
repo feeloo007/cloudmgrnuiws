@@ -122,6 +122,34 @@ div.wsnui_navigator.row {
 	height			: 34em ;
 }
 
+.wsnui_ws.table {
+        display                 : table ;
+        border-spacing          : 0em ;
+        width                   : 100% ;
+}
+
+.wsnui_ws.row {
+        display                 : table-row ;
+}
+
+.wsnui_ws.cell {
+        display                 : table-cell ;
+        padding-right           : 0.25em ;
+        padding-left            : 0.25em ;
+}
+
+.wsnui_ws.cell.ws_name {
+        width                   : 100% ;
+}
+
+.wsnui_ws.cell.status {
+}
+
+.wsnui_ws.cell.status .ws_checker {
+        width                   : 0.925em;
+        height                  : 0.925em;
+}
+
 .wsnui_entity.table {
 	display			: table ;
 	border-spacing		: 0em ;
