@@ -559,7 +559,7 @@ def render(self, h, comp, *args):
 
     def reload_status( comp = comp ):
         self._result_WSURL = process_WSURL( self._status_WSURL )
-        comp.becomes( comp, model = 'CHECKED' )
+        comp.becomes( comp )
 
     u = ajax.Update(
         lambda r, comp = comp: comp.render( r ),
