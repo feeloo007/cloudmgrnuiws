@@ -339,6 +339,11 @@ def render(self, h, *args):
                                     class_ = 'wsnui_navigator data %s selected' % background_color.next()
                                 )
                             ).action( update_levels )
+			    h << h.script(
+'''
+if (document.querySelectorAll) { var elems=document.querySelectorAll('.selected');for(var i=0;i<elems.length;++i){elems[i].scrollIntoView()}}
+'''
+			    )
 
                         else:
                             h << h.a(
