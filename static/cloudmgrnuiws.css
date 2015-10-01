@@ -108,7 +108,7 @@ div.wsnui_navigator.row>div {
 
 
 .wsnui_navigator.datas {
-        flex: 1 1;
+        flex: 1 1 100vh;
         overflow		: auto ;
 }
 
@@ -117,7 +117,6 @@ div.wsnui_navigator.row>div {
 }
 
 .wsnui_navigator.actions {
-        overflow		: auto ;
 	background-color	: #F0E0E0 ;
 }
 
