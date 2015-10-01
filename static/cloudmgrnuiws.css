@@ -132,11 +132,10 @@ div.wsnui_navigator.row>div {
 }
 
 .wsnui_ws.row {
-        display                 : table-row ;
+        display                 : flex ;
 }
 
 .wsnui_ws.cell {
-        display                 : table-cell ;
         padding-right           : 0.25em ;
         padding-left            : 0.25em ;
 }
@@ -154,17 +153,14 @@ div.wsnui_navigator.row>div {
 }
 
 .wsnui_entity.table {
-	display			: table ;
 	border-spacing		: 0em ;
         width			: 100% ;
 }
 
 .wsnui_entity.row {
-	display			: table-row ;
+	display			: flex;
 }
-
 .wsnui_entity.cell {
-        display                 : table-cell ;
         padding-right		: 0.25em ;
         padding-left		: 0.25em ;
 }
@@ -200,11 +196,7 @@ div.wsnui_navigator.row>div {
 }
 
 .wsnui_action.row {
-        display                 : table-row ;
-}
-
-.wsnui_action.cell {
-        display                 : table-cell ;
+        display                 : flex ;
 }
 
 .wsnui_action.cell.actionname_aera {
