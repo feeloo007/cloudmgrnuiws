@@ -10,12 +10,14 @@
 }
 
 div.wsnui_navigator.table {
-	display			: table ;
 	border-spacing		: 0em ;
 }
 
-div.wsnui_navigator.row {
-        display                 : table-row ;
+div.wsnui_navigator.row>div {
+	display: flex;
+	flex-flow: row nowrap;
+	justify-content: flex-start;
+	height: calc(100vh - 17px);
 }
 
 .wsnui_navigator.title {
@@ -24,7 +26,9 @@ div.wsnui_navigator.row {
 }
 
 .wsnui_navigator.table>.wsnui_navigator.row>div>.wsnui_navigator.cell {
-        display                 : table-cell ;
+	display: flex;
+	flex-flow: column nowrap;
+	justify-content: flex-start;
 	background-color	: #E0E0F0 ;
 }
 
@@ -104,22 +108,20 @@ div.wsnui_navigator.row {
 
 
 .wsnui_navigator.datas {
-	height			: 16.25em ;
+        flex: 1 1 100vh;
         overflow		: auto ;
 }
 
 .wsnui_navigator.datas.x2 {
-	height			: 34em ;
+        flex-grow: 1;
 }
 
 .wsnui_navigator.actions {
-	height			: 16.25em ;
-        overflow		: auto ;
 	background-color	: #F0E0E0 ;
 }
 
 .wsnui_navigator.actions.x2 {
-	height			: 34em ;
+        flex-grow: 1;
 }
 
 .wsnui_ws.table {
@@ -129,11 +131,10 @@ div.wsnui_navigator.row {
 }
 
 .wsnui_ws.row {
-        display                 : table-row ;
+        display                 : flex ;
 }
 
 .wsnui_ws.cell {
-        display                 : table-cell ;
         padding-right           : 0.25em ;
         padding-left            : 0.25em ;
 }
@@ -151,17 +152,14 @@ div.wsnui_navigator.row {
 }
 
 .wsnui_entity.table {
-	display			: table ;
 	border-spacing		: 0em ;
         width			: 100% ;
 }
 
 .wsnui_entity.row {
-	display			: table-row ;
+	display			: flex;
 }
-
 .wsnui_entity.cell {
-        display                 : table-cell ;
         padding-right		: 0.25em ;
         padding-left		: 0.25em ;
 }
@@ -197,11 +195,7 @@ div.wsnui_navigator.row {
 }
 
 .wsnui_action.row {
-        display                 : table-row ;
-}
-
-.wsnui_action.cell {
-        display                 : table-cell ;
+        display                 : flex ;
 }
 
 .wsnui_action.cell.actionname_aera {
